@@ -46,9 +46,11 @@ def printFolderTree(cluster, indent, f):
 
         #check empty entry
         if (len(entry) <= 0): break
-        
-        # Get the first byte of the entry
+
+        # Get the first byte and the attribute of the entry
         firstByte = entry[0]
+        attributes = entry[11]
+
 
         # Check if the first byte is 0x00, which means the entry is empty
         if firstByte == 0x00:
@@ -65,20 +67,26 @@ def printFolderTree(cluster, indent, f):
         # Check if the first byte is 0x0F, which means the entry is a long file name entry
         if firstByte == 0x0F:
             continue
-
+        
         # Volume ID, skip
-        if firstByte == 0x08: 
+        if attributes == 0x08:
+            continue
+        
+        # Hidden file or directory, skip
+        if attributes & 0x02:
             continue
 
-        # Hidden file or directory, skip
-        if firstByte & 0x02:
-            continue
+        # calculate the sector index stored on the disk
+        first_cluster_root_dir = int.from_bytes(entry[44:48], byteorder='little')
+        cluster_size = int.from_bytes(entry[13:14], byteorder='little') * 512
+        reserved_sectors = int.from_bytes(entry[14:16], byteorder='little')
+        root_dir_sector = reserved_sectors + (first_cluster_root_dir - 2) * cluster_size // 512
         
         # Check if the entry is a directory
         if entry[11] == 0x10:
             # Print the name of the directory
             name = entry[0:11].decode('ascii').strip()
-            print(indent + "|-- " + name)
+            print(indent + "|-- " + name + ", (Sector) " + str(root_dir_sector))
 
             # Get the cluster of the directory
             subdirectoryCluster = entry[26] + (entry[27] << 8) + (entry[20] << 16) + (entry[21] << 24)
@@ -94,9 +102,21 @@ def printFolderTree(cluster, indent, f):
 
             # Combine name and extension in name.extension format
             file_name = f"{name}.{extension}"
+            
+            # Extract the size from the entry
+            file_size = int.from_bytes(entry[28:32], byteorder='little', signed=False)
 
-            # Print the name of the file on a single line
-            print(indent + "|-- " + file_name)
+            # Print the name and the size of the file on a single line
+            print(indent + "|-- " + file_name + ", (Sector) " + str(root_dir_sector))
+            if extension == "TXT":
+                startingCluster = entry[26] + (entry[27] << 8) + (entry[20] << 16) + (entry[21] << 24)
+                file_content = readSectors(f, clusterToSector(startingCluster), 1)
+               
+                print(indent + "|   |__(Size) " + str(file_size) + " byte")
+                print(indent + "|   |__(Content) " + file_content.decode('ascii').strip())
+            else:
+                print(indent + "|   |__(Size) " + str(file_size) + " byte")
+                print(indent + "|   |__(Use compatible software to read the content)")
 if __name__ == "__main__":
     print("FIT HCMUS - FILE MANAGEMENT SYSTEM")
     print("****************************")
