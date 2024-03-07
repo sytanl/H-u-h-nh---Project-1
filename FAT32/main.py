@@ -44,6 +44,9 @@ def printFolderTree(cluster, indent, f):
         entry = directoryEntry[i:i+32]
         next_entry = directoryEntry[i+32:i+64]
 
+        #check empty entry
+        if (len(entry) <= 0): break
+        
         # Get the first byte of the entry
         firstByte = entry[0]
 
@@ -63,6 +66,14 @@ def printFolderTree(cluster, indent, f):
         if firstByte == 0x0F:
             continue
 
+        # Volume ID, skip
+        if firstByte == 0x08: 
+            continue
+
+        # Hidden file or directory, skip
+        if firstByte & 0x02:
+            continue
+        
         # Check if the entry is a directory
         if entry[11] == 0x10:
             # Print the name of the directory
@@ -164,6 +175,3 @@ if __name__ == "__main__":
     print("****************************")
     printFolderTree(rootCluster, "", f)
 
-    
-
-    
