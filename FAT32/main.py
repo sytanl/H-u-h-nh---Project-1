@@ -34,6 +34,31 @@ def intToAscii(value):
 def clusterToSector(cluster):
     return (cluster - 2) * sectorPerCluster + reservedSectorCount + (numberOfFATs * sectorPerFAT)
 
+def read_entry(entry, i):
+        previous_entry_flag = entry [i + 11 - 32] 
+        if previous_entry_flag == 0x0F:  # If the previous entry is a sub entry
+            # Read the first part of the name from offset 01 (10 bytes)
+            part1 = entry[i + 1 - 32: i+ 11 -32].decode('latin-1', errors='ignore').strip().replace('\xff', '')
+
+            # Read the middle of the name from offset 0E (12 bytes)
+            part2 = entry[i+ 14 -32: i+ 26 -32].decode('latin-1', errors='ignore').strip().replace('\xff', '')
+
+            # Read the last part of the name from offset 1C (4 bytes)
+            part3 = entry[i + 28 -32: i+ 32 - 32].decode('latin-1', errors='ignore').strip().replace('\xff', '')
+
+            full_name = part1 + part2 + part3
+            return full_name
+        else:
+            if entry[i + 11] == 0x10:
+                full_name = entry[i : i + 11].decode('ascii').strip()
+            else: 
+                # Extract the name and extension from the entry
+                part1 = entry[i : i + 8].decode('ascii').strip()
+                part2 = entry[i + 8: i + 11].decode('ascii').strip()
+                full_name = part1 + "." + part2
+
+            return full_name
+
 def printFolderTree(cluster, indent, f):
     # Read the directory entry for the given cluster
     directoryEntry = readSectors(f, clusterToSector(cluster), 1)
@@ -65,7 +90,7 @@ def printFolderTree(cluster, indent, f):
             continue
 
         # Check if the first byte is 0x0F, which means the entry is a long file name entry
-        if firstByte == 0x0F:
+        if attributes == 0x0F:
             continue
         
         # Volume ID, skip
@@ -85,7 +110,7 @@ def printFolderTree(cluster, indent, f):
         # Check if the entry is a directory
         if entry[11] == 0x10:
             # Print the name of the directory
-            name = entry[0:11].decode('ascii').strip()
+            name = read_entry(directoryEntry, i)
             print(indent + "|-- " + name + ", (Sector) " + str(root_dir_sector))
 
             # Get the cluster of the directory
@@ -97,17 +122,14 @@ def printFolderTree(cluster, indent, f):
         # Check if the entry is a file
         if entry[11] != 0x10:
             # Extract the name and extension from the entry
-            name = entry[0:8].decode('ascii').strip()
+            name = read_entry(directoryEntry, i)
             extension = entry[8:11].decode('ascii').strip()
-
-            # Combine name and extension in name.extension format
-            file_name = f"{name}.{extension}"
-            
+          
             # Extract the size from the entry
             file_size = int.from_bytes(entry[28:32], byteorder='little', signed=False)
 
             # Print the name and the size of the file on a single line
-            print(indent + "|-- " + file_name + ", (Sector) " + str(root_dir_sector))
+            print(indent + "|-- " + name + ", (Sector) " + str(root_dir_sector))
             if extension == "TXT":
                 startingCluster = entry[26] + (entry[27] << 8) + (entry[20] << 16) + (entry[21] << 24)
                 file_content = readSectors(f, clusterToSector(startingCluster), 1)
@@ -117,6 +139,7 @@ def printFolderTree(cluster, indent, f):
             else:
                 print(indent + "|   |__(Size) " + str(file_size) + " byte")
                 print(indent + "|   |__(Use compatible software to read the content)")
+                
 if __name__ == "__main__":
     print("FIT HCMUS - FILE MANAGEMENT SYSTEM")
     print("****************************")
