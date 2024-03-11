@@ -39,12 +39,12 @@ class Menu(cmd.Cmd):
     
     def do_open(self,arg):
         '''
-        cat <file_name>: print content of a specific file (text only)
+        open <file_name>: print content of a specific file (text only)
         '''
         if arg == "":
             print(f"[ERROR] No name provided")
             return
-        for i in self.drive.directory_tree:
+        for i in self.vol.directory_tree:
             if i["FILE NAME"]==arg:
                 if i["DATA"]!="":
                     raw_data=i["DATA"].decode()
@@ -56,6 +56,19 @@ class Menu(cmd.Cmd):
                         print("Use other compatible software to read the content")
                 else:
                     print("Invalid file")
+    
+    def do_quit(self,arg):
+        '''
+        quit: exit the menu
+        '''
+        print("Thank for using")
+        self.close()
+        return True
+    
+    def close(self):
+        if self.vol:
+            del self.vol
+            self.vol = None
 
 
 
