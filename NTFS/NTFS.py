@@ -204,3 +204,13 @@ class NTFS:
         if getattr(self, "file", None):
             self.file.close()
 
+    def check_ntfs(name: str):
+        try:
+            with open(r'\\.\%s' % name, 'rb') as fd:
+                oem_id = fd.read(0xB)[3:]
+                if oem_id == b'NTFS    ':
+                    return True
+                return False
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            exit()
