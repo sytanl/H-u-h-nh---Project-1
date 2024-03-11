@@ -44,6 +44,53 @@ def read_entry(entry, i):
             part2 = entry[i + 8: i + 11].decode('ascii').strip()
             full_name = part1 + "." + part2
         return full_name
+def classify_file(indent, file_size, extension):
+
+    software_name = None
+    if (extension == "DOCX"):
+        software_name = "Microsoft Word"
+    elif (extension == "PDF"):
+        software_name = "Adobe Acrobat Reader"
+    elif (extension == "XLSX"):
+        software_name = "Microsoft Excel"
+    elif (extension == "ODS"):
+        software_name = "LibreOffice"
+    elif (extension == "PPTX"):
+        software_name = "Microsoft PowerPoint"
+    elif (extension == "JPG"):
+        software_name = "Windows Photo Viewer"
+    elif (extension == "PNG"):
+        software_name = "IrfanView"
+    elif (extension == "GIF"):
+        software_name = "Web browser"
+    elif (extension == "MP4"):
+        software_name = "VLC Media Player"
+    elif (extension == "MOV"):
+        software_name = "QuickTime"
+    elif (extension == "AVI"):
+        software_name = "KMPlayer"
+    elif (extension == "MP3"):
+        software_name = "Windows Media Player"
+    elif (extension == "WAV"):
+        software_name = "Audacity"
+    elif (extension == "ZIP"):
+        software_name = "WinRAR"
+    elif (extension == "RAR"):
+        software_name = "7-Zip"
+    elif (extension == "7Z"):
+        software_name = "7_Zip"
+    elif (extension == "HTML"):
+        software_name = "Web browser"
+    elif (extension == "PY"):
+        software_name = "Visual Studio Code"
+    elif (extension == "CPP"):
+        software_name = "Visual Studio Code"
+    else:
+        software_name = "compatible software"
+
+
+    print(indent + "|   |__(Size) " + str(file_size) + " byte")
+    print(indent + f"|   |__(Use {software_name} to read the content)")
 
 def printFolderTree(cluster, indent, f, bootSector):
     directoryEntry = readSectors(f, clusterToSector(cluster, bootSector), 1)
@@ -104,8 +151,7 @@ def printFolderTree(cluster, indent, f, bootSector):
                 print(indent + "|   |__(Size) " + str(file_size) + " byte")
                 print(indent + "|   |__(Content) " + file_content.decode('ascii').strip())
             else:
-                print(indent + "|   |__(Size) " + str(file_size) + " byte")
-                print(indent + "|   |__(Use compatible software to read the content)")
+                classify_file(indent, file_size, extension)
 
 def ReadFAT(disk):
     f = open(disk, 'rb')
