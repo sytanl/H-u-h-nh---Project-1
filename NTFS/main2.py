@@ -44,7 +44,7 @@ class Menu(cmd.Cmd):
         if arg == "":
             print(f"[ERROR] No name provided")
             return
-        for i in self.drive.directory_tree:
+        for i in self.vol.directory_tree:
             if i["FILE NAME"]==arg:
                 if i["DATA"]!="":
                     raw_data=i["DATA"].decode()
