@@ -56,6 +56,19 @@ class Menu(cmd.Cmd):
                         print("Use other compatible software to read the content")
                 else:
                     print("Invalid file")
+    
+    def do_quit(self,arg):
+        '''
+        quit: exit the menu
+        '''
+        print("Thank for using")
+        self.close()
+        return True
+    
+    def close(self):
+        if self.vol:
+            del self.vol
+            self.vol = None
 
 
 
