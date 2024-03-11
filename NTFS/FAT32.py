@@ -153,10 +153,8 @@ def printFolderTree(cluster, indent, f, bootSector):
             else:
                 classify_file(indent, file_size, extension)
 
-def ReadFAT(disk):
-    f = open(disk, 'rb')
-    bootSector = readSectors(f, 0, 1)
 
+def bootSectorInfo(bootSector):
     bytesPerSector = readNumBuffer(bootSector, "0x0B", 2)
     sectorPerCluster = readNumBuffer(bootSector, "0x0D", 1)
     reservedSectorCount = readNumBuffer(bootSector, "0x0E", 2)
@@ -177,10 +175,108 @@ def ReadFAT(disk):
     print("Chỉ số cluster đầu tiên của rdet ", rootCluster)
     print("Tên loại FAT ", ascii_fatType)
 
-    print("****************************")
-    print("Folder tree")
-    print("****************************")
-    printFolderTree(rootCluster, "", f, bootSector)
+def readCluster(file, cluster, bootSector):
+    bytesPerSector = readNumBuffer(bootSector, "0x0B", 2)
+    sectorPerCluster = readNumBuffer(bootSector, "0x0D", 1)
+    return readSectors(file, clusterToSector(cluster, bootSector), sectorPerCluster)
+def isFolder(entry):
+    attributes = entry[11]
+    return (attributes & 0x10) != 0
+
+def readName(entry):
+    name_bytes = entry[0:8]
+    extension_bytes = entry[8:11]
+
+    try:
+        name = name_bytes.decode('ascii', errors='replace').strip()
+        extension = extension_bytes.decode('ascii', errors='replace').strip()
+
+        full_name = name
+        if extension:
+            full_name += "." + extension
+
+        return full_name
+    except UnicodeDecodeError:
+        print("Error decoding name.")
+        return ""
+
+
+def changeDirectory(currentCluster, folderName, file, bootSector):
+    clusterSize = readNumBuffer(bootSector, "0x0D", 1) * readNumBuffer(bootSector, "0x0B", 2)
+    directory = readCluster(file, currentCluster, bootSector)
+    
+    folderName = folderName.replace(" ", "")  # Remove white spaces from the input folderName
+
+    for i in range(0, len(directory), 32):
+        entry = directory[i:i+32]
+        attributes = readNumBuffer(entry, "0x0B", 1)
+        firstCluster = readNumBuffer(entry, "0x1A", 2)
+        entryName = readName(entry).replace(" ", "")  # Remove white spaces from the entryName
+        
+        if (attributes & 0x08) == 0 and entryName == folderName:
+            if (attributes & 0x10) == 0:
+                print("This is not a directory.")
+            else:
+                return firstCluster
+    print("Directory not found.")
+    return currentCluster
+
+
+def ReadFAT(disk):
+    f = open(disk, 'rb')
+    bootSector = readSectors(f, 0, 1)
+    rootCluster = readNumBuffer(bootSector, "0x2C", 4)  
+    bootSectorInfo(bootSector)
+
+    #make me a menu with options 1. cd 2. print tree 3.exit
+    while True:
+        print("****************************")
+        print("Menu")
+        print("1. Change directory")
+        print("2. Print folder tree")
+        print("3. Return to root")
+        print("4. Exit")
+        choice = input("Enter your choice: ")
+        if choice == "1":
+            folderName = input("Enter folder name: ")
+            rootCluster = changeDirectory(rootCluster, folderName, f, bootSector)
+            #clear the screen
+            os.system('cls' if os.name == 'nt' else 'clear')
+            #change current f path to the folder
+            print("****************************")
+            currentFolderName = readName(readCluster(f, rootCluster, bootSector))
+            print("Folder changed to " + folderName)
+
+
+        elif choice == "2":
+            #clear the screen
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print("****************************")
+            print("Folder tree")
+            print("****************************")
+            printFolderTree(rootCluster, "", f, bootSector)
+        elif choice == "3":
+            rootCluster = readNumBuffer(bootSector, "0x2C", 4)
+            print("Folder changed to root")
+        elif choice == "4":
+            break
+        else:
+            print("Invalid choice")
+
+def check_fat32(volume_name):
+    disk = '\\\\.\\' + volume_name
+    f = open(disk, 'rb')
+    #return true if it is fat
+    bootSector = readSectors(f, 0, 1)
+    fatType = readNumBuffer(bootSector, "0x52", 8)
+    ascii_fatType = intToAscii(fatType).strip()
+    ascii_fatType = ascii_fatType[::-1]
+    print(ascii_fatType)
+    if ascii_fatType.lower() == "fat32":
+        return True
+    else:
+        return False
+
 
 
 
