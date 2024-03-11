@@ -33,6 +33,7 @@ class NTFS:
                 if node['PARENT ID'] in self.valid_parent_id and not node['FILE NAME'].startswith('$'):
                     if node['attr_flag'] == 0 or node['attr_flag'] == 32:
                         node['sector index'] = self.save_offset // self.pbs['bs']
+                        node['SIZE OF DATA'] = str(node['SIZE OF DATA']) + " KB"
                         self.directory_tree.append(node)
                         if node['attr_flag'] == 0:
                             self.valid_parent_id.append(node['ID'])
@@ -106,6 +107,7 @@ class NTFS:
                 
                 offset = int.from_bytes(self.raw_entry[self.cur_offset + 20: self.cur_offset + 22], byteorder='little')
                 infor['SIZE OF DATA'] = int.from_bytes(self.raw_entry[self.cur_offset + 16: self.cur_offset + 20], byteorder='little')
+                infor['SIZE OF DATA'] = ceil(infor['SIZE OF DATA'] / 1024)
                 if infor["FILE NAME"].endswith('.txt'):    
                     infor['DATA'] = self.raw_entry[self.cur_offset + offset: self.cur_offset + offset + infor['SIZE OF DATA']]
                 else:
@@ -167,7 +169,8 @@ class NTFS:
                         content = content + self.file.read(self.pbs['bs'])
             size += run_length
             index += 1
-        return content, size * self.pbs['sc'] * self.pbs['bs']
+            size = ceil(size * self.pbs['sc'] * self.pbs['bs'] / 1024)
+        return content, size 
     
     def extract_partition_boot_sector(self):
         self.pbs = {}
