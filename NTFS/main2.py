@@ -39,7 +39,7 @@ class Menu(cmd.Cmd):
     
     def do_open(self,arg):
         '''
-        cat <file_name>: print content of a specific file (text only)
+        open <file_name>: print content of a specific file (text only)
         '''
         if arg == "":
             print(f"[ERROR] No name provided")
