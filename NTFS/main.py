@@ -34,7 +34,7 @@ class Menu(cmd.Cmd):
                         print(prefix +("|-- " )+ i["FILE NAME"]+ " (Sector:" +str(i["sector index"])+")"+ (" (Size:"+str(i["SIZE OF DATA"])+")" if i["SIZE OF DATA"] else ""))
                         print_tree(a,i["FILE NAME"],'|'+'   '+ prefix)
         if arg=="":
-            print(self.vol)
+            print(self.vol.drive_name)
         else:
             print(arg)
         print_tree(self.vol,arg)
@@ -55,7 +55,11 @@ class Menu(cmd.Cmd):
                         for j in data:
                             print(j)
                     else:
-                        print("Use other compatible software to read the content")
+                        software_name = self.vol.classify_file(i["FILE NAME"])
+                        if software_name:
+                            print(f"Use {software_name} to read the content")
+                        else:
+                            print("Use other compatible software to read the content")
                 else:
                     print("Invalid file")
     

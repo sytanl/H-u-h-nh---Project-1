@@ -130,7 +130,7 @@ class NTFS:
             infor['DATA'] = ""
             infor['Resident'] = True
 
-        return infor
+        return infor    
 
     def extract_attr(self) -> dict:
         attr_header = {
@@ -197,10 +197,51 @@ class NTFS:
         print("MFT Entry Size:", self.pbs['Entry Size'])
         print("Clusters Per Index Buffer:", self.pbs['Clusters Per Index Buffer'])
         print("Volume Serial Number:", self.pbs['Volume Serial Number'])
-    def __del__(self):
-        if getattr(self, "file", None):
-            self.file.close()
 
+    def classify_file(self, name: str):
+        software_name = None
+        if name.lower().endswith('.docx'):
+            software_name = "Microsoft Word"
+        if name.lower().endswith('.pdf'):
+            software_name = "Adobe Acrobat Reader"
+        if name.lower().endswith('.xlsx'):
+            software_name = "Microsoft Excel"
+        if name.lower().endswith('.ods'):
+            software_name = "LibreOffice"
+        if name.lower().endswith('.pptx'):
+            software_name = "Microsoft PowerPoint"
+        if name.lower().endswith('.ppt'):
+            software_name = "Microsoft PowerPoint"
+        if name.lower().endswith('.jpg'):
+            software_name = "Windows Photo Viewer"
+        if name.lower().endswith('.png'):
+            software_name = "IrfanView"
+        if name.lower().endswith('.gif'):
+            software_name = "Web browser"
+        if name.lower().endswith('.mp4'):
+            software_name = "VLC Media Player"
+        if name.lower().endswith('.mov'):
+            software_name = "QuickTime"
+        if name.lower().endswith('.avi'):
+            software_name = "KMPlayer"
+        if name.lower().endswith('.mp3'):
+            software_name = "Windows Media Player"
+        if name.lower().endswith('.wav'):
+            software_name = "Audacity"
+        if name.lower().endswith('.zip'):
+            software_name = "WinRAR"
+        if name.lower().endswith('.rar'):
+            software_name = "7-Zip"
+        if name.lower().endswith('.7z'):
+            software_name = "7_Zip"
+        if name.lower().endswith('.html'):
+            software_name = "Web browser"
+        if name.lower().endswith('.py'):
+            software_name = "Visual Studio Code"
+        if name.lower().endswith('.cpp'):
+            software_name = "Visual Studio Code"
+        return software_name
+    
     def check_ntfs(name: str):
         try:
             with open(r'\\.\%s' % name, 'rb') as fd:
@@ -211,3 +252,7 @@ class NTFS:
         except Exception as e:
             print(f"[ERROR] {e}")
             exit()
+
+    def __del__(self):
+        if getattr(self, "file", None):
+            self.file.close()
