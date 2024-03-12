@@ -38,9 +38,6 @@ class NTFS:
                         if node['attr_flag'] == 0:
                             self.valid_parent_id.append(node['ID'])
 
-    def check_ntfs(self):
-        pass 
-
     def extract_mft_entry(self) -> dict:
         infor = {}
         try:

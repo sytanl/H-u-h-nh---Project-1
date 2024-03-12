@@ -272,7 +272,7 @@ def check_fat32(volume_name):
     fatType = readNumBuffer(bootSector, "0x52", 8)
     ascii_fatType = intToAscii(fatType).strip()
     ascii_fatType = ascii_fatType[::-1]
-    print(ascii_fatType)
+    #print(ascii_fatType)
     if ascii_fatType.lower() == "fat32":
         return True
     else:
