@@ -135,19 +135,25 @@ def printFolderTree(cluster, indent, f, bootSector):
             printFolderTree(subdirectory_cluster, indent + "|   ", f, bootSector)
 
         if entry[11] != 0x10:
+            flag = 0
             if directoryEntry[i + 11 - 32] == 0x0F:
                 name = read_entry(directoryEntry, i)
+                flag = 1
             else:
-                name = entry[0: 8].decode('ascii').strip()
+                name = entry[0:8].decode('ascii').strip()
             extension = entry[8:11].decode('ascii').strip()
             file_size = int.from_bytes(entry[28:32], byteorder='little', signed=False)
 
-            print(indent + "|-- " + name + f"(Sector: {root_dir_sector}) " + f" (Size: {file_size / 1024} KB)")
             if extension == "TXT":
+                print(indent + "|-- " + name + f"(Sector: {root_dir_sector}) " + f" (Size: {file_size / 1024} KB)")
                 startingCluster = entry[26] + (entry[27] << 8) + (entry[20] << 16) + (entry[21] << 24)
                 file_content = readSectors(f, clusterToSector(startingCluster, bootSector), 1)
                 print(indent + "|   |__(Content) " + file_content.decode('ascii').strip())
             else:
+                if flag == 1:
+                    print(indent + "|-- " + name + f"(Sector: {root_dir_sector}) " + f" (Size: {file_size / 1024} KB)")
+                elif flag == 0: 
+                    print(indent + "|-- " + name + "." + extension.lower() + f"(Sector: {root_dir_sector}) " + f" (Size: {file_size / 1024} KB)")
                 classify_file(indent, extension)
 
 
@@ -208,13 +214,10 @@ def changeDirectory(currentCluster, folderName, file, bootSector):
         entry = directory[i:i+32]
         attributes = readNumBuffer(entry, "0x0B", 1)
         firstCluster = readNumBuffer(entry, "0x1A", 2)
-        entryName = readName(entry).replace(" ", "")  # Remove white spaces from the entryName
+        entryName = entry[0:11].decode('ascii').strip()  # Remove white spaces from the entryName
         
-        if (attributes & 0x08) == 0 and entryName == folderName:
-            if (attributes & 0x10) == 0:
-                print("This is not a directory.")
-            else:
-                return firstCluster
+        if entry[11] == 0x10 and entryName == folderName.upper():
+            return firstCluster
     print("Directory not found.")
     return currentCluster
 
@@ -237,6 +240,7 @@ def ReadFAT(disk):
         if choice == "1":
             folderName = input("Enter folder name: ")
             rootCluster = changeDirectory(rootCluster, folderName, f, bootSector)
+            print(rootCluster)
             #clear the screen
             os.system('cls' if os.name == 'nt' else 'clear')
             #change current f path to the folder
